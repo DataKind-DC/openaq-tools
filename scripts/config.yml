@@ -1,0 +1,4 @@
+errors:
+  flag: MISSING
+  type: set
+  values: [-99, -999, -9999, -99999]

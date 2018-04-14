@@ -12,7 +12,6 @@ The contents of this repository include:
 
 * `index.html`: A visualization of some data generated using OpenAQ
 * `scripts/`: Scripts for downloading, cleaning and managing OpenAQ data
-    * `request-and-clean.js`: Requests
 
 ### Interface
 
@@ -34,6 +33,32 @@ Open your browser at the local port your web server is running.
 
 #### Prerequisites
 
-* node >= 8.9, nvm
+* [node](https://nodejs.org/en/) >= 8.9
+* [nvm](https://github.com/creationix/nvm)
 
+#### Installation
+
+```bash
+nvm use
+npm install
+```
+
+#### Scripts
+
+**[`scripts/request-and-clean.js`](./scripts/request-and-clean.js)**
+
+* Requests daily data files from `https://openaq-data.s3.amazonaws.com`.
+* Downloads all data from dates defined in that script.
+* Currently filters data to measurements of metric pm25.
+* Groups data by location and writes daily values, by location to `data/dontcommit/<location>/<date>.json`.
+
+To download data, update the date range in [`scripts/request-and-clean.js`](./scripts/request-and-clean.js) if required.
+
+```bash
+node scripts/request-and-clean.js
+```
+
+**[`scripts/generate-highcharts-raw-series.js`](./scripts/generate-highcharts-raw-series.js)**
+
+Concatenates pm2.5 values and timestamps in `dontcommit/Shanghai` - which may or may not exists to generate `data/commit/highcharts-series-raw.json` which is used in the current visualization.
 

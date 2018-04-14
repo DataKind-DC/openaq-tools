@@ -6,7 +6,7 @@ const request = require('request');
 const yaml = require('js-yaml');
 
 const baseUrl = 'https://openaq-data.s3.amazonaws.com'
-const Flagger = require('../../openaq-quality-checks/lib/flagger');
+const Flagger = require('openaq-quality-checks');
 const config = yaml.safeLoad(fs.readFileSync('scripts/config.yml', 'utf8'));
 
 const startDate = moment('2015-06-29');

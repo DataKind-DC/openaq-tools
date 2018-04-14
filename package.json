@@ -20,6 +20,7 @@
     "csvtojson": "^1.1.9",
     "js-yaml": "^3.11.0",
     "moment": "^2.22.0",
+    "openaq-quality-checks": "github:openaq/openaq-quality-checks#abarciauskas-bgse_export-flagger",
     "request": "^2.85.0"
   }
 }

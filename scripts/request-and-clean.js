@@ -9,8 +9,8 @@ const baseUrl = 'https://openaq-data.s3.amazonaws.com'
 const Flagger = require('../../openaq-quality-checks/lib/flagger');
 const config = yaml.safeLoad(fs.readFileSync('scripts/config.yml', 'utf8'));
 
-const startDate = moment('2015-08-03');
-const endDate = moment('2015-12-31');
+const startDate = moment('2015-06-29');
+const endDate = moment('2015-06-30');
 let currentDate = startDate;
 
 // If you want an exclusive end date (half-open interval)
@@ -46,7 +46,7 @@ for (let currentDate = moment(startDate); currentDate.isBefore(endDate); current
         const groups = _.groupBy(filteredData, 'location');
         Object.keys(groups).forEach((locationName) => {
           const locationData = groups[locationName];
-          const directory = `./data/${locationName.split(' ').join('_')}`;
+          const directory = `./data/dontcommit/${locationName.split(' ').join('_')}`;
           // TODO(aimee): Fix { Error: ENOENT: no such file or directory, mkdir './data/Horst_a/d_Maas-Hoogheide'
           try {
             if (!fs.existsSync(directory)) fs.mkdirSync(directory);

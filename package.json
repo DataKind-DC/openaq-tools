@@ -1,0 +1,25 @@
+{
+  "name": "openaq-tools",
+  "version": "1.0.0",
+  "description": "Scripts and visualizations built on top of OpenAQ data.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/datakind-dc/openaq-tools.git"
+  },
+  "author": "abarciauskas-bgse",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/datakind-dc/openaq-tools/issues"
+  },
+  "homepage": "https://github.com/datakind-dc/openaq-tools#readme",
+  "dependencies": {
+    "csvtojson": "^1.1.9",
+    "js-yaml": "^3.11.0",
+    "moment": "^2.22.0",
+    "request": "^2.85.0"
+  }
+}

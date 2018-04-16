@@ -6,12 +6,13 @@ const request = require('request');
 const yaml = require('js-yaml');
 
 const baseUrl = 'https://openaq-data.s3.amazonaws.com'
-const Flagger = require('openaq-quality-checks');
+const Flagger = require('openaq-quality-checks/lib/flagger');
 const config = yaml.safeLoad(fs.readFileSync('scripts/config.yml', 'utf8'));
 
-const startDate = moment('2015-06-29');
-const endDate = moment('2015-06-30');
+const startDate = moment('2015-12-31');
+const endDate = moment('2016-12-31');
 let currentDate = startDate;
+const locationsFilter = ['Shanghai'];
 
 // If you want an exclusive end date (half-open interval)
 for (let currentDate = moment(startDate); currentDate.isBefore(endDate); currentDate.add(1, 'days')) {
@@ -44,7 +45,9 @@ for (let currentDate = moment(startDate); currentDate.isBefore(endDate); current
         // group by location and write to files
         // /data/<location>/<date>.json
         const groups = _.groupBy(filteredData, 'location');
-        Object.keys(groups).forEach((locationName) => {
+        const locations = locationsFilter.length > 0 ? locationsFilter : Object.keys(groups);
+
+        locations.forEach((locationName) => {
           const locationData = groups[locationName];
           const directory = `./data/dontcommit/${locationName.split(' ').join('_')}`;
           // TODO(aimee): Fix { Error: ENOENT: no such file or directory, mkdir './data/Horst_a/d_Maas-Hoogheide'

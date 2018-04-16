@@ -51,6 +51,7 @@ npm install
 * Downloads all data from dates defined in that script.
 * Currently filters data to measurements of metric pm25.
 * Groups data by location and writes daily values, by location to `data/dontcommit/<location>/<date>.json`.
+* Includes option `locationsFilter` which limits data saved to disk to only locations defined in that list.
 
 To download data, update the date range in [`scripts/request-and-clean.js`](./scripts/request-and-clean.js) if required.
 

@@ -1,6 +1,6 @@
 # OpenAQ Tools
 
-OpenAQ Tools is a repository for scripts and visualizations built on top of OpenAQ data. hi
+OpenAQ Tools is a repository for scripts and visualizations built on top of OpenAQ data.
 
 ## Target Audience
 

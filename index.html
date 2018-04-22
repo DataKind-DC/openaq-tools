@@ -10,6 +10,7 @@
     <select class="form-control" id="citySelect">
       <option selected="selected">Shanghai</option>
       <option>Kathmandu</option>
+      <option>Delhi</option>
     </select>
   </div>
 </form>
@@ -20,12 +21,17 @@
   const getJSON = $.getJSON;
 
   const plotData = function(city) {
+    let dataLocation = `./data/commit/${city}/highcharts-series-raw.json`
+    if (city === 'Delhi') {
+      dataLocation = 'https://s3.amazonaws.com/aimeeb-datasets-public/openaq/highcharts/Delhi/highcharts.json';
+    }
     getJSON(
-        `./data/commit/${city}/highcharts-series-raw.json`,
+        dataLocation,
         function (data) {
 
             Highcharts.chart('container', {
                 chart: {
+                  type: 'scatter',
                     zoomType: 'x'
                 },
                 title: {
@@ -47,30 +53,30 @@
                     enabled: false
                 },
                 plotOptions: {
-                    area: {
-                        fillColor: {
-                            linearGradient: {
-                                x1: 0,
-                                y1: 0,
-                                x2: 0,
-                                y2: 1
-                            },
-                            stops: [
-                                [0, Highcharts.getOptions().colors[0]],
-                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
-                            ]
-                        },
-                        marker: {
-                            radius: 2
-                        },
-                        lineWidth: 1,
-                        states: {
-                            hover: {
-                                lineWidth: 1
-                            }
-                        },
-                        threshold: null
-                    }
+                  scatter: {
+                      marker: {
+                          radius: 2,
+                          states: {
+                              hover: {
+                                  enabled: true,
+                                  lineColor: 'rgb(100,100,100)'
+                              }
+                          }
+                      },
+                      states: {
+                          hover: {
+                              marker: {
+                                  enabled: false
+                              }
+                          }
+                      },
+                      tooltip: {
+                          pointFormatter: function() {
+                            const dateObject = new Date(this.x).toLocaleString();
+                            return '<b>' + dateObject + '</b>: ' + this.y;
+                          }
+                      }
+                  }
                 },
 
                 series: [{

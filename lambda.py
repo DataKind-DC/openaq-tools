@@ -26,7 +26,7 @@ def lambda_handler(event, context):
     city = row['city']
     value = float(row['value'])
     cityDatime = row['local'][0:19]
-    timestamp = time.mktime(datetime.datetime.strptime(cityDatime, "%Y-%m-%dT%H:%M:%S").timetuple())
+    timestamp = int(1000*time.mktime(datetime.datetime.strptime(cityDatime, "%Y-%m-%dT%H:%M:%S").timetuple()))
     if city in data_grouped:
       data_grouped[city].append([timestamp, value])
     else:
@@ -46,7 +46,7 @@ def lambda_handler(event, context):
   for measurement in data_grouped[city]:
     if measurement not in existing_data:
       existing_data.append(measurement)
-  obj.put(Bucket=bucket, Key=key, Body=json.dumps(existing_data, indent=2))
+  obj.put(Bucket=bucket, Key=key, Body=json.dumps(existing_data, indent=2), ACL='public-read')
   return 'Hello from Lambda'
 
 lambda_handler(event, {})

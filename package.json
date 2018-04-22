@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/datakind-dc/openaq-tools#readme",
   "dependencies": {
+    "aws-sdk": "^2.226.1",
     "csvtojson": "^1.1.9",
     "js-yaml": "^3.11.0",
     "moment": "^2.22.0",

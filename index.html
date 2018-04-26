@@ -11,6 +11,7 @@
       <option selected="selected">Shanghai</option>
       <option>Kathmandu</option>
       <option>Delhi</option>
+      <option>Beijing</option>
     </select>
   </div>
 </form>
@@ -22,8 +23,8 @@
 
   const plotData = function(city) {
     let dataLocation = `./data/commit/${city}/highcharts-series-raw.json`
-    if (city === 'Delhi') {
-      dataLocation = 'https://s3.amazonaws.com/aimeeb-datasets-public/openaq/highcharts/Delhi/highcharts.json';
+    if (city === 'Delhi' || city === 'Beijing') {
+      dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/highcharts/${city}/highcharts.json`;
     }
     getJSON(
         dataLocation,

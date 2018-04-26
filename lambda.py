@@ -34,7 +34,7 @@ def lambda_handler(event, context):
       data_grouped[city].append([timestamp, value])
   
   # load existing highcharts data
-  city = 'Delhi'
+  city = 'Beijing'
   bucket = 'aimeeb-datasets-public'
   key = 'openaq/highcharts/{0}/highcharts.json'.format(city)
   obj = s3.Object(bucket, key)
@@ -47,6 +47,4 @@ def lambda_handler(event, context):
     if measurement not in existing_data:
       existing_data.append(measurement)
   obj.put(Bucket=bucket, Key=key, Body=json.dumps(existing_data, indent=2), ACL='public-read')
-  return 'Hello from Lambda'
-
-lambda_handler(event, {})
+  return 'Success'

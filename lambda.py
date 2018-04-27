@@ -40,7 +40,6 @@ def lambda_handler(event, context):
   
   # load existing highcharts data
   # city = 'Delhi'
-  print(json.dumps(data_grouped, indent=2))
   for location in data_grouped.keys():
     for parameter in data_grouped[location].keys():
       s3Key = 'openaq/timeseries/{0}/{1}/all-highcharts.json'.format(location, parameter)
@@ -50,7 +49,7 @@ def lambda_handler(event, context):
       except Exception as err:
         existing_data = []
         print('Got error: {0}'.format(err))
-      for idx, measurement in enumerate(location[parameter]):
+      for measurement in data_grouped[location][parameter]:
         if measurement not in existing_data:
           existing_data.append(measurement)
       obj.put(Bucket=destination_bucket, Key=s3Key, Body=json.dumps(existing_data, indent=2), ACL='public-read')

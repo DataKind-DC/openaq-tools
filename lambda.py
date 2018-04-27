@@ -38,8 +38,7 @@ def lambda_handler(event, context):
       data_grouped[city_location][parameter] = []
     data_grouped[city_location][parameter].append([timestamp, value])
   
-  # load existing highcharts data
-  # city = 'Delhi'
+  # load and update existing highcharts data
   for location in data_grouped.keys():
     for parameter in data_grouped[location].keys():
       s3Key = 'openaq/timeseries/{0}/{1}/all-highcharts.json'.format(location, parameter)

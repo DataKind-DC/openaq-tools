@@ -4,39 +4,88 @@
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-<form>
-  <div class="form-group">
-    <label for="citySelect">Select a city</label>
-    <select class="form-control" id="citySelect">
-      <option selected="selected">Shanghai</option>
-      <option>Kathmandu</option>
-      <option>Delhi</option>
-      <option>Beijing</option>
-    </select>
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1>OpenAQ Time Series</h1>
+    </div>
   </div>
-</form>
+  <div class="row"></div>
+  <div class="row">
+    <div class="col-8">
+      <div id="ts-chart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    </div>
+    <div class="col-4">
+      <form>
+        <div class="form-group">
+          <label for="citySelect">Select a city</label>
+          <select class="form-control" id="citySelect">
+            <option selected="selected">Shanghai</option>
+          </select>
+        </div>
 
-<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+        <div class="form-group">
+          <label for="locationSelect">Select a location</label>
+          <select class="form-control" id="locationSelect">
+            <option selected="selected">somewhere over the rainbow</option>
+          </select>
+        </div> 
 
+        <div class="form-group">
+          <label for="parameterSelect" >Select a parameter</label>
+          <select class="form-control" id="parameterSelect">
+            <option selected="selected">pm25</option>
+          </select>
+        </div>        
+      </form>
+    </div>
+  </div>
+</div>
 <script type="text/javascript">
   const getJSON = $.getJSON;
+  let cities;
 
-  const plotData = function(city) {
-    let dataLocation = `./data/commit/${city}/highcharts-series-raw.json`
-    if (city === 'Delhi' || city === 'Beijing') {
-      dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/highcharts/${city}/highcharts.json`;
+  const updateDropdown = function(dropdownId, values) {
+    const select = document.getElementById(dropdownId);
+    select.options.length = 0;
+
+    /* Insert the new ones from the array above */
+    $.each(values, (_, value) => {
+      select.options[select.options.length] = new Option(value, value);
+    });
+  }
+  // populate cities dropdown from API
+  getJSON('https://api.openaq.org/v1/cities?order_by[]=count&order_by[]=city&sort=desc&limit=200', (data) => {
+    cities = data.results.map((city) => city['city']);
+    updateDropdown('citySelect', cities);   
+  });
+
+  const plotData = function(options = {}) {
+    const city = citySelected;
+    const location = locationSelected;
+    const parameter = parameterSelected;
+    $("#citySelect").val(citySelected);
+    $("#locationSelect").val(locationSelected);
+    $("#parameterSelect").val(parameterSelected);
+
+    let dataLocation;
+    if (city === 'Shanghai') {
+      dataLocation = `./data/commit/${city}/highcharts-series-raw.json`;
+    } else {
+      dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
     }
+
     getJSON(
         dataLocation,
         function (data) {
 
-            Highcharts.chart('container', {
+            Highcharts.chart('ts-chart', {
                 chart: {
                   type: 'scatter',
                     zoomType: 'x'
                 },
                 title: {
-                    text: `${city} PM2.5 Levels`
+                    text: `${city} ${parameter} Levels`
                 },
                 subtitle: {
                     text: document.ontouchstart === undefined ?
@@ -89,12 +138,43 @@
     );
   }
 
+  const updateCity = function(city) {
+    // list locations
+    getJSON(`https://api.openaq.org/v1/locations?city=${city}`, (data) => {
+      const locations = data.results.map(location => location['location']);
+      updateDropdown('locationSelect', locations);
+    });
+    plotData();
+  }
+
+  let citySelected = 'Delhi';
+  let locationSelected = 'Anand Vihar';
+  let parameterSelected = 'pm25';
+  updateCity(citySelected);
+  
   $('#citySelect').change(() => {
-    const citySelected = $("#citySelect option:selected").text(); 
-    plotData(citySelected);
+    citySelected = $("#citySelect option:selected").text();
+    updateCity(citySelected);
   });
 
-  plotData('Shanghai');
+  $('#locationSelect').change(() => {
+    locationSelected = $("#locationSelect option:selected").text();
+
+    getJSON(`https://api.openaq.org/v1/locations?location=${locationSelected}`, (data) => {
+      const parameters = data.results[0].parameters;
+      updateDropdown('parameterSelect', parameters);
+    });
+    plotData();
+  });
+
+  $('#parameterSelect').change(() => {
+    parameterSelected = $("#parameterSelect option:selected").text();
+    plotData({
+      city: citySelected,
+      location: locationSelected,
+      parameter: parameterSelected
+    });
+  });
 </script>
 
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

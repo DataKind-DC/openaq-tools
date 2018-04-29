@@ -10,7 +10,6 @@ import datetime
 
 s3 = boto3.resource('s3')
 destination_bucket = 'aimeeb-datasets-public'
-event = {u'Records': [{u'eventVersion': u'2.0', u'eventTime': u'2018-04-22T21:32:20.599Z', u'requestParameters': {u'sourceIPAddress': u'96.83.79.65'}, u's3': {u'configurationId': u'b5349eb9-f468-42ef-a2fb-308abad33969', u'object': {u'eTag': u'f87dd447fc0b7d82b126a6b2d0b2310d', u'sequencer': u'005ADCFF64838CADCC', u'key': u'openaq/source/2015-06-29.csv', u'size': 16591}, u'bucket': {u'arn': u'arn:aws:s3:::aimeeb-datasets', u'name': u'aimeeb-datasets', u'ownerIdentity': {u'principalId': u'AP7CAEZ5UG61V'}}, u's3SchemaVersion': u'1.0'}, u'responseElements': {u'x-amz-id-2': u'hJq/BC7pFJwYX4A+jgwgno8AGPTAnQUS2ScKp30sxGi6//n2lZYs9QhtpjQnGrM3631ZCPWJdz4=', u'x-amz-request-id': u'84011303F669C3CE'}, u'awsRegion': u'us-east-1', u'eventName': u'ObjectCreated:Put', u'userIdentity': {u'principalId': u'AP7CAEZ5UG61V'}, u'eventSource': u'aws:s3'}]}
 
 def lambda_handler(event, context):
   # load new data
@@ -24,9 +23,9 @@ def lambda_handler(event, context):
   
   data_grouped = {}
   for row in reader:
-    city = '-'.join(row['city'].split(' '))
-    location = '-'.join(row['location'].split(' '))
-    city_location = '_'.join([city, location])
+    city = row['city']
+    location = row['location']
+    city_location = '/'.join([city, location])
     # TODO: Update locations.json file
     parameter = row['parameter']
     value = float(row['value'])
@@ -40,6 +39,7 @@ def lambda_handler(event, context):
   
   # load and update existing highcharts data
   for location in data_grouped.keys():
+    # update locations file
     for parameter in data_grouped[location].keys():
       s3Key = 'openaq/timeseries/{0}/{1}/all-highcharts.json'.format(location, parameter)
       obj = s3.Object(destination_bucket, s3Key)
@@ -54,4 +54,7 @@ def lambda_handler(event, context):
       obj.put(Bucket=destination_bucket, Key=s3Key, Body=json.dumps(existing_data, indent=2), ACL='public-read')
   return 'Success'
 
+# for testing
+# sample event for testing
+event = {u'Records': [{u'eventVersion': u'2.0', u'eventTime': u'2018-04-22T21:32:20.599Z', u'requestParameters': {u'sourceIPAddress': u'96.83.79.65'}, u's3': {u'configurationId': u'b5349eb9-f468-42ef-a2fb-308abad33969', u'object': {u'eTag': u'f87dd447fc0b7d82b126a6b2d0b2310d', u'sequencer': u'005ADCFF64838CADCC', u'key': u'openaq/source/2015-06-29.csv', u'size': 16591}, u'bucket': {u'arn': u'arn:aws:s3:::aimeeb-datasets', u'name': u'aimeeb-datasets', u'ownerIdentity': {u'principalId': u'AP7CAEZ5UG61V'}}, u's3SchemaVersion': u'1.0'}, u'responseElements': {u'x-amz-id-2': u'hJq/BC7pFJwYX4A+jgwgno8AGPTAnQUS2ScKp30sxGi6//n2lZYs9QhtpjQnGrM3631ZCPWJdz4=', u'x-amz-request-id': u'84011303F669C3CE'}, u'awsRegion': u'us-east-1', u'eventName': u'ObjectCreated:Put', u'userIdentity': {u'principalId': u'AP7CAEZ5UG61V'}, u'eventSource': u'aws:s3'}]}
 lambda_handler(event, {})

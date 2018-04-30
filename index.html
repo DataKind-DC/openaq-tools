@@ -57,17 +57,17 @@
   // populate cities dropdown from API
   getJSON('https://api.openaq.org/v1/cities?order_by[]=count&order_by[]=city&sort=desc&limit=200', (data) => {
     cities = data.results.map((city) => city['city']);
-    updateDropdown('citySelect', cities);   
+    updateDropdown('citySelect', cities);
+    $("#citySelect").val(citySelected); 
   });
 
-  const plotData = function(options = {}) {
+  const plotData = function() {
     const city = citySelected;
     const location = locationSelected;
     const parameter = parameterSelected;
     $("#citySelect").val(citySelected);
     $("#locationSelect").val(locationSelected);
     $("#parameterSelect").val(parameterSelected);
-
     let dataLocation;
     if (city === 'Shanghai') {
       dataLocation = `./data/commit/${city}/highcharts-series-raw.json`;
@@ -138,43 +138,44 @@
     );
   }
 
-  const updateCity = function(city) {
+  const updateParameters = function(locationSelected) {
+    getJSON(`https://api.openaq.org/v1/locations?location=${locationSelected}`, (data) => {
+      const parameters = data.results[0].parameters;
+      parameterSelected = parameters[0];
+      updateDropdown('parameterSelect', parameters);
+      plotData();
+    });    
+  }
+
+  const updateLocations = function(city) {
     // list locations
     getJSON(`https://api.openaq.org/v1/locations?city=${city}`, (data) => {
       const locations = data.results.map(location => location['location']);
+      locationSelected = locations[0];
       updateDropdown('locationSelect', locations);
+      plotData();
     });
-    plotData();
   }
-
-  let citySelected = 'Delhi';
-  let locationSelected = 'Anand Vihar';
-  let parameterSelected = 'pm25';
-  updateCity(citySelected);
   
   $('#citySelect').change(() => {
     citySelected = $("#citySelect option:selected").text();
-    updateCity(citySelected);
+    updateLocations(citySelected);
   });
 
   $('#locationSelect').change(() => {
     locationSelected = $("#locationSelect option:selected").text();
-
-    getJSON(`https://api.openaq.org/v1/locations?location=${locationSelected}`, (data) => {
-      const parameters = data.results[0].parameters;
-      updateDropdown('parameterSelect', parameters);
-    });
-    plotData();
+    updateParameters(locationSelected);
   });
 
   $('#parameterSelect').change(() => {
     parameterSelected = $("#parameterSelect option:selected").text();
-    plotData({
-      city: citySelected,
-      location: locationSelected,
-      parameter: parameterSelected
-    });
+    plotData();
   });
+
+  let citySelected = 'Delhi';
+  let locationSelected = 'Anand Vihar';
+  let parameterSelected = 'pm25';
+  updateLocations(citySelected);  
 </script>
 
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

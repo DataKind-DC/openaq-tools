@@ -53,7 +53,7 @@ async function invoker(event, context, cb) {
 
 exports.handler = handler;
 exports.invoker = invoker;
-invoker({startDate: '2016-05-31', endDate: '2016-12-31'}, {}, (err, result) => {
+invoker({startDate: '2016-12-31', endDate: '2017-06-30'}, {}, (err, result) => {
   if (err) console.log(err);
   return result;
 });

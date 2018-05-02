@@ -55,7 +55,7 @@
     });
   }
   // populate cities dropdown from API
-  getJSON('https://api.openaq.org/v1/cities?order_by[]=count&order_by[]=city&sort=desc&limit=200', (data) => {
+  getJSON('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200', (data) => {
     cities = data.results.map((city) => city['city']);
     updateDropdown('citySelect', cities);
     $("#citySelect").val(citySelected); 
@@ -139,7 +139,7 @@
   }
 
   const updateParameters = function(locationSelected) {
-    getJSON(`https://api.openaq.org/v1/locations?location=${locationSelected}`, (data) => {
+    getJSON('https://api.openaq.org/v1/locations', {'location': locationSelected}, (data) => {
       const parameters = data.results[0].parameters;
       parameterSelected = parameters[0];
       updateDropdown('parameterSelect', parameters);
@@ -149,11 +149,11 @@
 
   const updateLocations = function(city) {
     // list locations
-    getJSON(`https://api.openaq.org/v1/locations?city=${city}`, (data) => {
+    getJSON('https://api.openaq.org/v1/locations', {'city': city}, (data) => {
       const locations = data.results.map(location => location['location']);
       locationSelected = locations[0];
       updateDropdown('locationSelect', locations);
-      plotData();
+      updateParameters(locationSelected);
     });
   }
   

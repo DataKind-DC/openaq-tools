@@ -43,7 +43,23 @@ nvm use
 npm install
 ```
 
+#### Backfilling data for the dashboard
+
+The dashboard was generated using 2 lambda functions (detailed below) deployed into an AWS account.
+
+![backfill architecture](https://docs.google.com/drawings/d/e/2PACX-1vT6pOQnU8IEfwjha92XBe8-uqvf-g9uq1uxqnMmpPGTFJbRyV_2SWOC9ZKQlrxkMyXD6H69MeiTZGQ1/pub?w=1277&h=567)
+
 #### Scripts
+
+**[`scripts/lambdas/copy-to-from-s3/`](./scripts/lambdas/copy-to-from-s3)**
+
+AWS Lambda code for getting data from openaq's s3 and dumping it into another S3 bucket. Used to trigger generate_highcharts lambda for generating data for the dashboard. Currently, the S3 bucket is hardcoded to `aimeeb-datasets`.
+
+There is also code to invoke (see `function invoker`) the copy-to-from-s3 lambda function, so the lambda handler function can be invoked many times, e.g. once for every day in a period of days, to maximize parallelization of copy data from one s3 to another. HERE BE DRAGONS $$.
+
+**[`scripts/lambdas/generate_highcharts.py`](./scripts/lambdas/generate_highcharts.py)**
+
+The `generate_highcharts` lambda function is designed to be triggered when new data lands in S3 as deliverd by `copy-to-from-s3`. It loads the "just arrived" data (which is really old data, its just a copy operation to create a trigger event), which it expects to be a daily CSV export, generates data in the format that highcharts expets, and then stores this data in S3 for the dashboard to find. Right now, the S3 bucket in use by the dashboard and this function is hardcoded as `aimeeb-datasets-public`.
 
 **[`scripts/request-and-clean.js`](./scripts/request-and-clean.js)**
 

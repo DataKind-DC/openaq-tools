@@ -49,14 +49,60 @@
         </div>
       </div>
     </div>
-    
     <script type="text/javascript">
-      const dropdowns = {
-        'cities': document.getElementById('citySelect'),
-        'locations': document.getElementById('locationSelect'),
-        'params': document.getElementById('parameterSelect'),
+
+    // ############ Memoization library #################
+      const equalityCheck = (prev, next) => {
+        if(prev == null || next == null || prev.length !== next.length){
+          return false;
+        }
+
+        for(let i = 0; i < prev.length; i++){
+          if(prev[i] !== next[i]){
+            return false
+          }
+        }
+        return true;
       }
+
+      const memoize = (selectors, fn) => {        
+        let lastState;
+
+        return nextState => {
+          const selectedNextState = selectors.map(selector => selector(nextState));
+          if(!equalityCheck(lastState, selectedNextState)){
+            fn(...selectedNextState);
+          }
+          lastState = selectedNextState;
+        }
+      }
+
+    </script>
+    <script type="text/javascript">
+      // ########### Component Library ################
+      const createComponent = ({ selector, render, onMount }) => {
+        const element = document.querySelector(selector);
+        if(typeof onMount === 'function'){
+          onMount(element);
+        }
+        return render(element);
+      }
+
+    </script>
+    <script type="text/javascript">
+      // ############ Utility functions ###############
+      const updateDropdownOptions = (dropdown, values) => {
+        dropdown.options.length = 0;
+        values.forEach(value => {
+          dropdown.options[dropdown.options.length] = new Option(value, value);
+        })
+        return dropdown;
+      }
+    </script>
+    <script type="text/javascript">
+      // ############# State Management ################
       let state = {
+        chartData: null,
         cities: [],
         locations: [],
         params: [],
@@ -64,143 +110,256 @@
         currentLocation: 'Anand Vihar',
         currentParam: 'pm25',
       }
+      let listeners = [];
 
-      const updateState = newState => {
-        state = Object.assign({}, state, newState);
-        updateDropdownsOptions(state);
-        updateDropdownsSelected(state);
-      }
-
-      const updateDropdownsOptions = state => {
-        Object.keys(dropdowns).forEach(key => {
-          const select = dropdowns[key];
-          select.options.length = 0;
-      
-          /* Insert the new ones from the array above */
-          state[key].forEach(value => {
-            select.options[select.options.length] = new Option(value, value);
-          })
-        })
+      const updateState = stateChange => {
+        const newState = Object.assign({}, state, stateChange);
+        listeners.forEach(listener => {
+          listener(newState);
+        });
+        state = newState;
       }
 
-      const updateDropdownsSelected = state => {
-        dropdowns['cities'].value = state.currentCity;
-        dropdowns['locations'].value = state.currentLocation;
-        dropdowns['params'].value = state.currentParam;        
-      }
-    
-      const updateChart = () => {
-        const {
-          currentCity: city,
-          currentLocation: location,
-          currentParam: parameter,
-        } = state
+      const subscribe = newListener => {
+        listeners = [...listeners, newListener];
 
-        let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
-        axios.get(dataLocation)
-          .then(({ data }) => {
-            Highcharts.chart('ts-chart', {
-              chart: {
-                type: 'scatter',
-                  zoomType: 'x'
-              },
-              title: {
-                  text: `${city} ${parameter} Levels`
-              },
-              subtitle: {
-                  text: document.ontouchstart === undefined ? 'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in',
-              },
-              xAxis: {
-                  type: 'datetime',
-              },
-              yAxis: {
-                  title: {
-                      text: parameter
-                  }
-              },
-              legend: {
-                  enabled: false
-              },
-              plotOptions: {
-                scatter: {
-                    marker: {
-                        radius: 2,
-                        states: {
-                            hover: {
-                                enabled: true,
-                                lineColor: 'rgb(100,100,100)'
-                            }
-                        }
-                    },
-                    states: {
-                        hover: {
-                            marker: {
-                                enabled: false
-                            }
-                        }
-                    },
-                    tooltip: {
-                        pointFormatter: function() {
-                          const dateObject = new Date(this.x).toLocaleString();
-                          return '<b>' + dateObject + '</b>: ' + this.y;
-                        }
-                    }
-                }
-              },
-              series: [{
-                  name: parameter,
-                  data: data
-              }]
-            });
-          })
+        const unsubscribe = () => {
+          listeners = listeners.filter(listener => listener !== newListener);
+        }
+        return unsubscribe;
       }
-    
-      const updateParameters = location => {
-        axios.get(`https://api.openaq.org/v1/locations?location[]=${ location }`)
-          .then(res => {
-            const params = res.data.results[0].parameters;
-            const currentParam = params[0];
-            updateState({ currentParam, params })
-            updateChart();     
-          })
-      }
-    
-      const updateLocations = city => {
-        axios.get(`https://api.openaq.org/v1/locations?city[]=${ city }`)
-          .then(res => {
-            const locations = res.data.results.map(location => location['location']);
-            const currentLocation = locations[0];
-            updateState({ currentLocation, locations });
-            updateParameters(currentLocation);
-          })
+    </script>
+    <script type="text/javascript">
+      // ############### API Services #################
+      //TODO: Generic response error handler to replace console.logs
+
+      const updateChartDataFromDB = async currentState => {
+        try{
+          const {
+            currentCity: city,
+            currentLocation: location,
+            currentParam: parameter,
+          } = currentState;
+          let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
+          const res = await axios.get(dataLocation);
+          const chartData = res.data;
+          updateState({ chartData })
+        }
+        catch(err){
+          console.log(err);
+        }
       }
 
-      dropdowns['cities'].addEventListener('change', () => {
-        const currentCity = document.querySelector("#citySelect option:checked").innerText;
-        updateState({ currentCity })
-        updateLocations(currentCity);
-      })
-      
-      dropdowns['locations'].addEventListener('change', () => {
-        const currentLocation = document.querySelector("#locationSelect option:checked").innerText;
-        updateState({ currentLocation })
-        updateParameters(currentLocation);
-      });
-      
-      dropdowns['params'].addEventListener('change', () => {
-        const currentParam = document.querySelector("#parameterSelect option:checked").innerText;
-        updateState({ currentParam })
-        updateChart();
-      });
-    
-      // ########## INITIALIZE ############
-      axios.get('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200')
-        .then(res => {
+      const updateCitiesListFromAPI = async () => {
+        try{
+          const res = await axios.get('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200');
           const cities = res.data.results.map(city => city['city']);
           updateState({ cities });
-        })
-    
-      updateLocations(state.currentCity);  
+        }
+        catch(err){
+          console.log(err);
+        }
+      }
+
+      const updateLocationsListFromAPI = async currentCity => {
+        try{
+          const res = await axios.get(`https://api.openaq.org/v1/locations?city[]=${ currentCity }`);
+          const locations = res.data.results.map(location => location['location']);
+          const currentLocation = locations[0];
+          updateState({ 
+            locations, 
+            currentLocation, 
+            currentCity 
+          });
+        }
+        catch(err){
+          console.log(err);
+        }
+      }
+
+      const updateParamsFromAPI = async currentLocation => {
+        try{
+          const res = await axios.get(`https://api.openaq.org/v1/locations?location[]=${ state.currentLocation }`)
+          const params = res.data.results[0].parameters;
+          const currentParam = params[0];
+          updateState({
+            params,
+            currentParam,
+            currentLocation,
+          });
+        }
+        catch(err){
+          console.log(err);
+        }
+      }
+    </script>
+    <script type="text/javascript">
+      // ########### Components ##############
+      // Create Component (regular function or 'bespoke') -> Memoize Component -> Subscribe Component
+
+      // COMPONENT: CityDropdown
+      const cityDropdownComponent = createComponent({
+        selector: '#citySelect',
+        render: element => (currentCity, cities = []) => {
+          if(cities.length){
+            updateDropdownOptions(element, cities);
+          }
+          element.value = currentCity;
+        },
+        onMount: element => {
+          element.addEventListener('change', e => {
+            const currentCity = e.target.value;
+            updateLocationsListFromAPI(currentCity);
+          })
+        },
+      })
+
+      const CityDropdown = memoize(
+        [
+          state => state.currentCity,
+          state => state.cities,
+        ],
+        cityDropdownComponent
+      )
+
+      subscribe(CityDropdown);
+
+      // COMPONENT: LocationDropdown
+      const locationDropdownComponent = createComponent({
+        selector: '#locationSelect',
+        render: element => (currentLocation, locations = []) => {
+          if(locations.length){
+            updateDropdownOptions(element, locations)
+          }
+          element.value = currentLocation;
+        },
+        onMount: element => {
+          element.addEventListener('change', e => {
+            const currentLocation = e.target.value;
+            updateParamsFromAPI(currentLocation);
+          });
+        }
+      })
+
+      const LocationDropdown = memoize(
+        [
+          state => state.currentLocation,
+          state => state.locations,
+        ],
+        locationDropdownComponent
+      )
+
+      subscribe(LocationDropdown);
+
+      // COMPONENT: ParamDropdown
+      const paramDropdownComponent = createComponent({
+        selector: '#parameterSelect',
+        render: element => (currentParam, parameters = []) => {
+          if(parameters.length){
+            updateDropdownOptions(element, parameters)
+          }
+          element.value = currentParam;        
+        },
+        onMount: element => {
+          element.addEventListener('change', e => {
+            const currentParam = e.target.value;
+            updateState({ currentParam });
+          });
+        }
+      })
+
+      const ParamDropdown = memoize(
+        [
+          state => state.currentParam,
+          state => state.params,
+        ],
+        paramDropdownComponent
+      )
+
+      subscribe(ParamDropdown);
+      
+      // COMPONENT: Chart
+      const chartComponent = (data, city, location, parameter) => {
+        if(!data){
+          // TODO: Good place to add error messaging
+          return;
+        }
+
+        Highcharts.chart('ts-chart', {
+          chart: {
+            type: 'scatter',
+              zoomType: 'x'
+          },
+          title: {
+              text: `${city} ${parameter} Levels`
+          },
+          subtitle: {
+              text: document.ontouchstart === undefined ? 'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in',
+          },
+          xAxis: {
+              type: 'datetime',
+          },
+          yAxis: {
+              title: {
+                  text: parameter
+              }
+          },
+          legend: {
+              enabled: false
+          },
+          plotOptions: {
+            scatter: {
+                marker: {
+                    radius: 2,
+                    states: {
+                        hover: {
+                            enabled: true,
+                            lineColor: 'rgb(100,100,100)'
+                        }
+                    }
+                },
+                states: {
+                    hover: {
+                        marker: {
+                            enabled: false
+                        }
+                    }
+                },
+                tooltip: {
+                    pointFormatter: function() {
+                      const dateObject = new Date(this.x).toLocaleString();
+                      return '<b>' + dateObject + '</b>: ' + this.y;
+                    }
+                }
+            }
+          },
+          series: [{
+              name: parameter,
+              data: data
+          }]
+        });          
+      }
+
+      const Chart = memoize(
+        [
+          state => state.chartData,
+          state => state.currentCity,
+          state => state.currentLocation,
+          state => state.currentParam
+        ],
+        chartComponent
+      )      
+      
+      subscribe(Chart);
+      
+    </script>
+    <script type="text/javascript">
+      // ########### INITIALIZE ##########
+
+      updateCitiesListFromAPI();
+      updateLocationsListFromAPI(state.currentCity);
+      updateParamsFromAPI(state.currentLocation);
+      updateChartDataFromDB(state);
     </script>
     
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

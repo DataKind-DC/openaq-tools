@@ -1,180 +1,188 @@
-<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/exporting.js"></script>
-<script src="https://code.highcharts.com/modules/export-data.js"></script>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
-<div class="container">
-  <div class="row">
-    <div class="col-12 py-4">
-      <h1 style="font-size: 3em; font-weight: 600">OpenAQ Time Series</h1>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-8">
-      <div id="ts-chart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-    </div>
-    <div class="col-4">
-      <form>
-        <div class="form-group">
-          <label for="citySelect">Select a city</label>
-          <select class="form-control" id="citySelect">
-            <option selected="selected">Shanghai</option>
-          </select>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="X-UA-Compatible" content="ie=edge">
+      <title>Open AQ Time Series</title>
+      <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+      <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+      <script src="https://code.highcharts.com/highcharts.js"></script>
+      <script src="https://code.highcharts.com/modules/exporting.js"></script>
+      <script src="https://code.highcharts.com/modules/export-data.js"></script>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-12 py-4">
+          <h1 style="font-size: 3em; font-weight: 600">OpenAQ Time Series</h1>
         </div>
-
-        <div class="form-group">
-          <label for="locationSelect">Select a location</label>
-          <select class="form-control" id="locationSelect">
-            <option selected="selected">somewhere over the rainbow</option>
-          </select>
-        </div> 
-
-        <div class="form-group">
-          <label for="parameterSelect" >Select a parameter</label>
-          <select class="form-control" id="parameterSelect">
-            <option selected="selected">pm25</option>
-          </select>
-        </div>        
-      </form>
+      </div>
+      <div class="row">
+        <div class="col-8">
+          <div id="ts-chart" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+        </div>
+        <div class="col-4">
+          <form>
+            <div class="form-group">
+              <label for="citySelect">Select a city</label>
+              <select class="form-control" id="citySelect">
+                <option selected="selected">Shanghai</option>
+              </select>
+            </div>
+    
+            <div class="form-group">
+              <label for="locationSelect">Select a location</label>
+              <select class="form-control" id="locationSelect">
+                <option selected="selected">somewhere over the rainbow</option>
+              </select>
+            </div> 
+    
+            <div class="form-group">
+              <label for="parameterSelect" >Select a parameter</label>
+              <select class="form-control" id="parameterSelect">
+                <option selected="selected">pm25</option>
+              </select>
+            </div>        
+          </form>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-<script type="text/javascript">
-  // STATE
-  let cities;
-  let locations;
-  let params;
-  let citySelected = 'Delhi';
-  let locationSelected = 'Anand Vihar';
-  let parameterSelected = 'pm25';
-
-  const plotData = () => {
-    const city = citySelected;
-    const location = locationSelected;
-    const parameter = parameterSelected;
-    document.getElementById('citySelect').value = citySelected;
-    document.getElementById('locationSelect').value = locationSelected;
-    document.getElementById('parameterSelect').value = parameterSelected;
-
-    let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
-    axios.get(dataLocation)
-      .then(({ data }) => {
-        Highcharts.chart('ts-chart', {
-          chart: {
-            type: 'scatter',
-              zoomType: 'x'
-          },
-          title: {
-              text: `${city} ${parameter} Levels`
-          },
-          subtitle: {
-              text: document.ontouchstart === undefined ? 'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in',
-          },
-          xAxis: {
-              type: 'datetime',
-          },
-          yAxis: {
+    
+    <script type="text/javascript">
+      // STATE
+      let cities;
+      let locations;
+      let params;
+      let citySelected = 'Delhi';
+      let locationSelected = 'Anand Vihar';
+      let parameterSelected = 'pm25';
+    
+      const plotData = () => {
+        const city = citySelected;
+        const location = locationSelected;
+        const parameter = parameterSelected;
+        document.getElementById('citySelect').value = citySelected;
+        document.getElementById('locationSelect').value = locationSelected;
+        document.getElementById('parameterSelect').value = parameterSelected;
+    
+        let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
+        axios.get(dataLocation)
+          .then(({ data }) => {
+            Highcharts.chart('ts-chart', {
+              chart: {
+                type: 'scatter',
+                  zoomType: 'x'
+              },
               title: {
-                  text: parameter
-              }
-          },
-          legend: {
-              enabled: false
-          },
-          plotOptions: {
-            scatter: {
-                marker: {
-                    radius: 2,
+                  text: `${city} ${parameter} Levels`
+              },
+              subtitle: {
+                  text: document.ontouchstart === undefined ? 'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in',
+              },
+              xAxis: {
+                  type: 'datetime',
+              },
+              yAxis: {
+                  title: {
+                      text: parameter
+                  }
+              },
+              legend: {
+                  enabled: false
+              },
+              plotOptions: {
+                scatter: {
+                    marker: {
+                        radius: 2,
+                        states: {
+                            hover: {
+                                enabled: true,
+                                lineColor: 'rgb(100,100,100)'
+                            }
+                        }
+                    },
                     states: {
                         hover: {
-                            enabled: true,
-                            lineColor: 'rgb(100,100,100)'
+                            marker: {
+                                enabled: false
+                            }
                         }
-                    }
-                },
-                states: {
-                    hover: {
-                        marker: {
-                            enabled: false
+                    },
+                    tooltip: {
+                        pointFormatter: function() {
+                          const dateObject = new Date(this.x).toLocaleString();
+                          return '<b>' + dateObject + '</b>: ' + this.y;
                         }
-                    }
-                },
-                tooltip: {
-                    pointFormatter: function() {
-                      const dateObject = new Date(this.x).toLocaleString();
-                      return '<b>' + dateObject + '</b>: ' + this.y;
                     }
                 }
-            }
-          },
-          series: [{
-              name: parameter,
-              data: data
-          }]
-        });
+              },
+              series: [{
+                  name: parameter,
+                  data: data
+              }]
+            });
+          })
+      }
+    
+      const updateDropdown = (dropdownId, values) => {
+        const select = document.getElementById(dropdownId);
+        select.options.length = 0;
+    
+        /* Insert the new ones from the array above */
+        values.forEach(value => {
+          select.options[select.options.length] = new Option(value, value);
+        })
+      }
+    
+      const updateParameters = location => {
+        axios.get(`https://api.openaq.org/v1/locations?location[]=${ location }`)
+          .then(res => {
+            const parameters = res.data.results[0].parameters;
+            parameterSelected = parameters[0];
+            updateDropdown('parameterSelect', parameters);
+            plotData();     
+          })  
+      }
+    
+      const updateLocations = city => {
+        axios.get(`https://api.openaq.org/v1/locations?city[]=${ city }`)
+          .then(res => {
+            const locations = res.data.results.map(location => location['location']);
+            locationSelected = locations[0];
+            updateDropdown('locationSelect', locations);
+            updateParameters(locationSelected);
+          })
+      }
+      document.getElementById('citySelect').addEventListener('change', () => {
+        citySelected = document.querySelector("#citySelect option:checked").innerText;
+        updateLocations(citySelected);
       })
-  }
-
-  const updateDropdown = (dropdownId, values) => {
-    const select = document.getElementById(dropdownId);
-    select.options.length = 0;
-
-    /* Insert the new ones from the array above */
-    values.forEach(value => {
-      select.options[select.options.length] = new Option(value, value);
-    })
-  }
-
-  const updateParameters = location => {
-    axios.get(`https://api.openaq.org/v1/locations?location[]=${ location }`)
-      .then(res => {
-        const parameters = res.data.results[0].parameters;
-        parameterSelected = parameters[0];
-        updateDropdown('parameterSelect', parameters);
-        plotData();     
-      })  
-  }
-
-  const updateLocations = city => {
-    axios.get(`https://api.openaq.org/v1/locations?city[]=${ city }`)
-      .then(res => {
-        const locations = res.data.results.map(location => location['location']);
-        locationSelected = locations[0];
-        updateDropdown('locationSelect', locations);
+      
+      document.getElementById('locationSelect').addEventListener('change', () => {
+        locationSelected = document.querySelector("#locationSelect option:checked").innerText;
         updateParameters(locationSelected);
-      })
-  }
-  document.getElementById('citySelect').addEventListener('change', () => {
-    citySelected = document.querySelector("#citySelect option:checked").innerText;
-    updateLocations(citySelected);
-  })
+      });
+      
+      document.getElementById('parameterSelect').addEventListener('change', () => {
+        parameterSelected = document.querySelector("#parameterSelect option:checked").innerText;
+        plotData();
+      });
+    
+      axios.get('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200')
+        .then(res => {
+          cities = res.data.results.map(city => city['city']);
+          updateDropdown('citySelect', cities);
+          document.getElementById('citySelect').value = citySelected;
+        })
+    
+      updateLocations(citySelected);  
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
   
-  document.getElementById('locationSelect').addEventListener('change', () => {
-    locationSelected = document.querySelector("#locationSelect option:checked").innerText;
-    updateParameters(locationSelected);
-  });
-  
-  document.getElementById('parameterSelect').addEventListener('change', () => {
-    parameterSelected = document.querySelector("#parameterSelect option:checked").innerText;
-    plotData();
-  });
-
-  axios.get('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200')
-    .then(res => {
-      cities = res.data.results.map(city => city['city']);
-      updateDropdown('citySelect', cities);
-      document.getElementById('citySelect').value = citySelected;
-    })
-
-  updateLocations(citySelected);  
-</script>
-
-<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-
-<script type="text/javascript">
-  
-</script>
+  </body>
+</html>  

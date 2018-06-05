@@ -153,9 +153,9 @@
         cities: [],
         locations: [],
         params: [],
-        currentCity: 'Delhi',
-        currentLocation: 'Anand Vihar',
-        currentParam: 'pm25',
+        currentCity: '',
+        currentLocation: '',
+        currentParam: '',
       }
       let listeners = [];
 
@@ -187,6 +187,10 @@
             currentLocation: location,
             currentParam: parameter,
           } = currentState;
+          if(!city || !location || !parameter) {
+            return;
+          }
+
           let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
           updateState({ isFetching: true })
           const res = await axios.get(dataLocation);
@@ -241,7 +245,7 @@
       const updateParamsFromAPI = async currentLocation => {
         try{
           updateState({ isFetching: true })
-          const res = await axios.get(`https://api.openaq.org/v1/locations?location[]=${ state.currentLocation }`)
+          const res = await axios.get(`https://api.openaq.org/v1/locations?location[]=${ currentLocation }`)
           const params = res.data.results[0].parameters;
           const currentParam = params[0];
           updateState({
@@ -346,7 +350,8 @@
       
       // COMPONENT: Chart
       const chartComponent = (data, city, location, parameter) => {
-        if(!data){
+        console.log(data, city, location, parameter)
+        if(!data || !city || !location || !parameter){
           // TODO: Good place to add error messaging
           return;
         }
@@ -445,9 +450,8 @@
       // ########### INITIALIZE ##########
 
       updateCitiesListFromAPI();
-      updateLocationsListFromAPI(state.currentCity);
-      updateParamsFromAPI(state.currentLocation);
-      updateChartDataFromDB(state);
+      updateLocationsListFromAPI('Delhi');
+      updateParamsFromAPI('Anand Vihar');
     </script>
     
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

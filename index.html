@@ -42,30 +42,22 @@
   </div>
 </div>
 <script type="text/javascript">
-  const getJSON = $.getJSON;
+  // STATE
   let cities;
+  let locations;
+  let params;
   let citySelected = 'Delhi';
   let locationSelected = 'Anand Vihar';
   let parameterSelected = 'pm25';
-
-  const updateDropdown = (dropdownId, values) => {
-    const select = document.getElementById(dropdownId);
-    select.options.length = 0;
-
-    /* Insert the new ones from the array above */
-    values.forEach(value => {
-      select.options[select.options.length] = new Option(value, value);
-    })
-  }
 
   const plotData = () => {
     const city = citySelected;
     const location = locationSelected;
     const parameter = parameterSelected;
-    $("#citySelect").val(citySelected);
-    $("#locationSelect").val(locationSelected);
-    $("#parameterSelect").val(parameterSelected);
-    
+    document.getElementById('citySelect').value = citySelected;
+    document.getElementById('locationSelect').value = locationSelected;
+    document.getElementById('parameterSelect').value = parameterSelected;
+
     let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
     axios.get(dataLocation)
       .then(({ data }) => {
@@ -125,6 +117,16 @@
       })
   }
 
+  const updateDropdown = (dropdownId, values) => {
+    const select = document.getElementById(dropdownId);
+    select.options.length = 0;
+
+    /* Insert the new ones from the array above */
+    values.forEach(value => {
+      select.options[select.options.length] = new Option(value, value);
+    })
+  }
+
   const updateParameters = location => {
     axios.get(`https://api.openaq.org/v1/locations?location[]=${ location }`)
       .then(res => {
@@ -144,19 +146,18 @@
         updateParameters(locationSelected);
       })
   }
-  
-  $('#citySelect').change(() => {
-    citySelected = $("#citySelect option:selected").text();
+  document.getElementById('citySelect').addEventListener('change', () => {
+    citySelected = document.querySelector("#citySelect option:checked").innerText;
     updateLocations(citySelected);
-  });
-
-  $('#locationSelect').change(() => {
-    locationSelected = $("#locationSelect option:selected").text();
+  })
+  
+  document.getElementById('locationSelect').addEventListener('change', () => {
+    locationSelected = document.querySelector("#locationSelect option:checked").innerText;
     updateParameters(locationSelected);
   });
-
-  $('#parameterSelect').change(() => {
-    parameterSelected = $("#parameterSelect option:selected").text();
+  
+  document.getElementById('parameterSelect').addEventListener('change', () => {
+    parameterSelected = document.querySelector("#parameterSelect option:checked").innerText;
     plotData();
   });
 
@@ -164,7 +165,7 @@
     .then(res => {
       cities = res.data.results.map(city => city['city']);
       updateDropdown('citySelect', cities);
-      $("#citySelect").val(citySelected); 
+      document.getElementById('citySelect').value = citySelected;
     })
 
   updateLocations(citySelected);  

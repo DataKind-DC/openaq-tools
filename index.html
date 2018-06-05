@@ -11,6 +11,49 @@
       <script src="https://code.highcharts.com/modules/exporting.js"></script>
       <script src="https://code.highcharts.com/modules/export-data.js"></script>
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+      <style>
+        html, body {
+          height: 100%;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        body {
+          position: relative;
+        }
+
+        #loadingOverlay {
+          display: none;
+          justify-content: center;
+          align-items: center;
+          position: absolute;
+          height: 100%;
+          width: 100%;
+          top: 0;
+          left: 0;
+          background: rgba(255,255,255, 0.6);
+        }
+
+        #loadingOverlay.active {
+          display: flex;
+        }
+
+        #loadingSpinner {
+          border-radius: 50%;
+          width: 64px;
+          height: 64px;
+          border: 6px solid rgba(0, 0, 0, 0.1);
+          border-top: 6px solid #555;
+          animation: rotating 1.2s infinite cubic-bezier(0.785, 0.135, 0.15, 0.86);
+        }
+
+        @keyframes rotating {
+          100% {
+              transform: rotate(360deg);
+          }
+        }
+
+      </style>
   </head>
   <body>
     <div class="container">
@@ -48,6 +91,9 @@
           </form>
         </div>
       </div>
+    </div>
+    <div id="loadingOverlay">
+      <div id="loadingSpinner"></div>
     </div>
     <script type="text/javascript">
 
@@ -102,6 +148,7 @@
     <script type="text/javascript">
       // ############# State Management ################
       let state = {
+        isFetching: false,
         chartData: null,
         cities: [],
         locations: [],
@@ -141,6 +188,7 @@
             currentParam: parameter,
           } = currentState;
           let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
+          updateState({ isFetching: true })
           const res = await axios.get(dataLocation);
           const chartData = res.data;
           updateState({ chartData })
@@ -148,10 +196,14 @@
         catch(err){
           console.log(err);
         }
+        finally{
+          updateState({ isFetching: false })
+        }
       }
 
       const updateCitiesListFromAPI = async () => {
         try{
+          updateState({ isFetching: true })
           const res = await axios.get('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200');
           const cities = res.data.results.map(city => city['city']);
           updateState({ cities });
@@ -159,10 +211,14 @@
         catch(err){
           console.log(err);
         }
+        finally{
+          updateState({ isFetching: false })
+        }
       }
 
       const updateLocationsListFromAPI = async currentCity => {
         try{
+          updateState({ isFetching: true })
           const res = await axios.get(`https://api.openaq.org/v1/locations?city[]=${ currentCity }`);
           const locations = res.data.results.map(location => location['location']);
           const currentLocation = locations[0];
@@ -175,10 +231,14 @@
         catch(err){
           console.log(err);
         }
+        finally{
+          updateState({ isFetching: false })
+        }
       }
 
       const updateParamsFromAPI = async currentLocation => {
         try{
+          updateState({ isFetching: true })
           const res = await axios.get(`https://api.openaq.org/v1/locations?location[]=${ state.currentLocation }`)
           const params = res.data.results[0].parameters;
           const currentParam = params[0];
@@ -190,6 +250,9 @@
         }
         catch(err){
           console.log(err);
+        }
+        finally{
+          updateState({ isFetching: false })
         }
       }
     </script>
@@ -351,6 +414,27 @@
       )      
       
       subscribe(Chart);
+
+      const overlayComponent = createComponent({
+        selector: '#loadingOverlay',
+        render: element => isFetching => {
+          if(isFetching){
+            element.classList.add('active')
+          }
+          else{
+            element.classList.remove('active')
+          }
+        }
+      })
+
+      const Overlay = memoize(
+        [
+          state => state.isFetching
+        ],
+        overlayComponent
+      )
+
+      subscribe(Overlay)
       
     </script>
     <script type="text/javascript">

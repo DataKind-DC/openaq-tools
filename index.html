@@ -17,7 +17,7 @@
           width: 100%;
           box-sizing: border-box;
         }
-        
+
         body {
           position: relative;
         }
@@ -207,6 +207,7 @@
           const res = await axios.get('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200');
           const cities = res.data.results.map(city => city['city']);
           updateState({ cities });
+          updateChartDataFromDB(state);
         }
         catch(err){
           console.log(err);
@@ -227,6 +228,7 @@
             currentLocation, 
             currentCity 
           });
+          updateChartDataFromDB(state);
         }
         catch(err){
           console.log(err);
@@ -247,6 +249,7 @@
             currentParam,
             currentLocation,
           });
+          updateChartDataFromDB(state);
         }
         catch(err){
           console.log(err);
@@ -415,6 +418,7 @@
       
       subscribe(Chart);
 
+      // COMPONENT: Overlay
       const overlayComponent = createComponent({
         selector: '#loadingOverlay',
         render: element => isFetching => {

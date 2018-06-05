@@ -51,22 +51,51 @@
     </div>
     
     <script type="text/javascript">
-      // STATE
-      let cities;
-      let locations;
-      let params;
-      let citySelected = 'Delhi';
-      let locationSelected = 'Anand Vihar';
-      let parameterSelected = 'pm25';
+      const dropdowns = {
+        'cities': document.getElementById('citySelect'),
+        'locations': document.getElementById('locationSelect'),
+        'params': document.getElementById('parameterSelect'),
+      }
+      let state = {
+        cities: [],
+        locations: [],
+        params: [],
+        currentCity: 'Delhi',
+        currentLocation: 'Anand Vihar',
+        currentParam: 'pm25',
+      }
+
+      const updateState = newState => {
+        state = Object.assign({}, state, newState);
+        updateDropdownsOptions(state);
+        updateDropdownsSelected(state);
+      }
+
+      const updateDropdownsOptions = state => {
+        Object.keys(dropdowns).forEach(key => {
+          const select = dropdowns[key];
+          select.options.length = 0;
+      
+          /* Insert the new ones from the array above */
+          state[key].forEach(value => {
+            select.options[select.options.length] = new Option(value, value);
+          })
+        })
+      }
+
+      const updateDropdownsSelected = state => {
+        dropdowns['cities'].value = state.currentCity;
+        dropdowns['locations'].value = state.currentLocation;
+        dropdowns['params'].value = state.currentParam;        
+      }
     
-      const plotData = () => {
-        const city = citySelected;
-        const location = locationSelected;
-        const parameter = parameterSelected;
-        document.getElementById('citySelect').value = citySelected;
-        document.getElementById('locationSelect').value = locationSelected;
-        document.getElementById('parameterSelect').value = parameterSelected;
-    
+      const updateChart = () => {
+        const {
+          currentCity: city,
+          currentLocation: location,
+          currentParam: parameter,
+        } = state
+
         let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
         axios.get(dataLocation)
           .then(({ data }) => {
@@ -126,58 +155,52 @@
           })
       }
     
-      const updateDropdown = (dropdownId, values) => {
-        const select = document.getElementById(dropdownId);
-        select.options.length = 0;
-    
-        /* Insert the new ones from the array above */
-        values.forEach(value => {
-          select.options[select.options.length] = new Option(value, value);
-        })
-      }
-    
       const updateParameters = location => {
         axios.get(`https://api.openaq.org/v1/locations?location[]=${ location }`)
           .then(res => {
-            const parameters = res.data.results[0].parameters;
-            parameterSelected = parameters[0];
-            updateDropdown('parameterSelect', parameters);
-            plotData();     
-          })  
+            const params = res.data.results[0].parameters;
+            const currentParam = params[0];
+            updateState({ currentParam, params })
+            updateChart();     
+          })
       }
     
       const updateLocations = city => {
         axios.get(`https://api.openaq.org/v1/locations?city[]=${ city }`)
           .then(res => {
             const locations = res.data.results.map(location => location['location']);
-            locationSelected = locations[0];
-            updateDropdown('locationSelect', locations);
-            updateParameters(locationSelected);
+            const currentLocation = locations[0];
+            updateState({ currentLocation, locations });
+            updateParameters(currentLocation);
           })
       }
-      document.getElementById('citySelect').addEventListener('change', () => {
-        citySelected = document.querySelector("#citySelect option:checked").innerText;
-        updateLocations(citySelected);
+
+      dropdowns['cities'].addEventListener('change', () => {
+        const currentCity = document.querySelector("#citySelect option:checked").innerText;
+        updateState({ currentCity })
+        updateLocations(currentCity);
       })
       
-      document.getElementById('locationSelect').addEventListener('change', () => {
-        locationSelected = document.querySelector("#locationSelect option:checked").innerText;
-        updateParameters(locationSelected);
+      dropdowns['locations'].addEventListener('change', () => {
+        const currentLocation = document.querySelector("#locationSelect option:checked").innerText;
+        updateState({ currentLocation })
+        updateParameters(currentLocation);
       });
       
-      document.getElementById('parameterSelect').addEventListener('change', () => {
-        parameterSelected = document.querySelector("#parameterSelect option:checked").innerText;
-        plotData();
+      dropdowns['params'].addEventListener('change', () => {
+        const currentParam = document.querySelector("#parameterSelect option:checked").innerText;
+        updateState({ currentParam })
+        updateChart();
       });
     
+      // ########## INITIALIZE ############
       axios.get('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200')
         .then(res => {
-          cities = res.data.results.map(city => city['city']);
-          updateDropdown('citySelect', cities);
-          document.getElementById('citySelect').value = citySelected;
+          const cities = res.data.results.map(city => city['city']);
+          updateState({ cities });
         })
     
-      updateLocations(citySelected);  
+      updateLocations(state.currentCity);  
     </script>
     
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

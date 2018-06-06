@@ -22,6 +22,12 @@
           position: relative;
         }
 
+        #ts-chart {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
         #loadingOverlay {
           display: none;
           justify-content: center;
@@ -95,8 +101,65 @@
     <div id="loadingOverlay">
       <div id="loadingSpinner"></div>
     </div>
+    <script>
+      // ############ Highcharts Utility Functions
+      const renderChart = (selector, { data, city, location, parameter }) => {
+        Highcharts.chart('ts-chart', {
+          chart: {
+            type: 'scatter',
+              zoomType: 'x'
+          },
+          title: {
+              text: `${city} ${parameter} Levels`
+          },
+          subtitle: {
+              text: document.ontouchstart === undefined ? 'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in',
+          },
+          xAxis: {
+              type: 'datetime',
+          },
+          yAxis: {
+              title: {
+                  text: parameter
+              }
+          },
+          legend: {
+              enabled: false
+          },
+          plotOptions: {
+            scatter: {
+                marker: {
+                    radius: 2,
+                    states: {
+                        hover: {
+                            enabled: true,
+                            lineColor: 'rgb(100,100,100)'
+                        }
+                    }
+                },
+                states: {
+                    hover: {
+                        marker: {
+                            enabled: false
+                        }
+                    }
+                },
+                tooltip: {
+                    pointFormatter: function() {
+                      const dateObject = new Date(this.x).toLocaleString();
+                      return '<b>' + dateObject + '</b>: ' + this.y;
+                    }
+                }
+            }
+          },
+          series: [{
+              name: parameter,
+              data: data
+          }]
+        });   
+      }
+    </script>
     <script type="text/javascript">
-
     // ############ Memoization library #################
       const equalityCheck = (prev, next) => {
         if(prev == null || next == null || prev.length !== next.length){
@@ -144,10 +207,21 @@
         })
         return dropdown;
       }
+
+      const ajaxErrorHandler = error => {
+        if(error.response){
+          return 'Data not available';
+        }
+        if (error.request){
+          return 'Error sending request';
+        }
+        return error.message;
+      }
     </script>
     <script type="text/javascript">
       // ############# State Management ################
       let state = {
+        error: null,
         isFetching: false,
         chartData: null,
         cities: [],
@@ -178,8 +252,6 @@
     </script>
     <script type="text/javascript">
       // ############### API Services #################
-      //TODO: Generic response error handler to replace console.logs
-
       const updateChartDataFromDB = async currentState => {
         try{
           const {
@@ -192,38 +264,40 @@
           }
 
           let dataLocation = `https://s3.amazonaws.com/aimeeb-datasets-public/openaq/timeseries/${city}/${location.split(' ').join('+')}/${parameter}/all-highcharts.json`;
-          updateState({ isFetching: true })
+          updateState({ isFetching: true, error: null })
           const res = await axios.get(dataLocation);
           const chartData = res.data;
-          updateState({ chartData })
+          updateState({ chartData });
         }
-        catch(err){
-          console.log(err);
+        catch(error){
+          const message = ajaxErrorHandler(error);
+          updateState({ chartData: null, error: message });
         }
         finally{
-          updateState({ isFetching: false })
+          updateState({ isFetching: false });
         }
       }
 
       const updateCitiesListFromAPI = async () => {
         try{
-          updateState({ isFetching: true })
+          updateState({ isFetching: true, error: null })
           const res = await axios.get('https://api.openaq.org/v1/cities?order_by=count&sort=desc&limit=200');
           const cities = res.data.results.map(city => city['city']);
           updateState({ cities });
           updateChartDataFromDB(state);
         }
-        catch(err){
-          console.log(err);
+        catch(error){
+          const message = ajaxErrorHandler(error);
+          updateState({ error: message });
         }
         finally{
-          updateState({ isFetching: false })
+          updateState({ isFetching: false });
         }
       }
 
       const updateLocationsListFromAPI = async currentCity => {
         try{
-          updateState({ isFetching: true })
+          updateState({ isFetching: true, error: null })
           const res = await axios.get(`https://api.openaq.org/v1/locations?city[]=${ currentCity }`);
           const locations = res.data.results.map(location => location['location']);
           const currentLocation = locations[0];
@@ -234,17 +308,18 @@
           });
           updateChartDataFromDB(state);
         }
-        catch(err){
-          console.log(err);
+        catch(error){
+          const message = ajaxErrorHandler(error);
+          updateState({ error: message });
         }
         finally{
-          updateState({ isFetching: false })
+          updateState({ isFetching: false });
         }
       }
 
       const updateParamsFromAPI = async currentLocation => {
         try{
-          updateState({ isFetching: true })
+          updateState({ isFetching: true, error: null })
           const res = await axios.get(`https://api.openaq.org/v1/locations?location[]=${ currentLocation }`)
           const params = res.data.results[0].parameters;
           const currentParam = params[0];
@@ -255,11 +330,12 @@
           });
           updateChartDataFromDB(state);
         }
-        catch(err){
-          console.log(err);
+        catch(error){
+          const message = ajaxErrorHandler(error);
+          updateState({ error: message });
         }
         finally{
-          updateState({ isFetching: false })
+          updateState({ isFetching: false });
         }
       }
     </script>
@@ -349,74 +425,31 @@
       subscribe(ParamDropdown);
       
       // COMPONENT: Chart
-      const chartComponent = (data, city, location, parameter) => {
-        console.log(data, city, location, parameter)
-        if(!data || !city || !location || !parameter){
-          // TODO: Good place to add error messaging
-          return;
-        }
+      const chartComponent = createComponent({
+        selector: '#ts-chart',
+        render: element => (data, city, location, parameter, error) => {
+          if(error){
+            element.style.background = 'linear-gradient(rgb(255, 255, 255), rgb(238, 238, 238))';
+            element.innerText = error;
+            return;
+          }
+          if(!data || !city || !location || !parameter){
+            element.style.background = 'transparent';
+            element.innerHTML = '...';
+            return;
+          }
 
-        Highcharts.chart('ts-chart', {
-          chart: {
-            type: 'scatter',
-              zoomType: 'x'
-          },
-          title: {
-              text: `${city} ${parameter} Levels`
-          },
-          subtitle: {
-              text: document.ontouchstart === undefined ? 'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in',
-          },
-          xAxis: {
-              type: 'datetime',
-          },
-          yAxis: {
-              title: {
-                  text: parameter
-              }
-          },
-          legend: {
-              enabled: false
-          },
-          plotOptions: {
-            scatter: {
-                marker: {
-                    radius: 2,
-                    states: {
-                        hover: {
-                            enabled: true,
-                            lineColor: 'rgb(100,100,100)'
-                        }
-                    }
-                },
-                states: {
-                    hover: {
-                        marker: {
-                            enabled: false
-                        }
-                    }
-                },
-                tooltip: {
-                    pointFormatter: function() {
-                      const dateObject = new Date(this.x).toLocaleString();
-                      return '<b>' + dateObject + '</b>: ' + this.y;
-                    }
-                }
-            }
-          },
-          series: [{
-              name: parameter,
-              data: data
-          }]
-        });          
-      }
+          renderChart('ts-chart', { data, city, location, parameter })
+        }
+      })
 
       const Chart = memoize(
         [
           state => state.chartData,
           state => state.currentCity,
           state => state.currentLocation,
-          state => state.currentParam
+          state => state.currentParam,
+          state => state.error,
         ],
         chartComponent
       )      
@@ -448,7 +481,6 @@
     </script>
     <script type="text/javascript">
       // ########### INITIALIZE ##########
-
       updateCitiesListFromAPI();
       updateLocationsListFromAPI('Delhi');
       updateParamsFromAPI('Anand Vihar');

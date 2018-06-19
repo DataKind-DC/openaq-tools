@@ -1,3 +1,9 @@
+import pandas as pd
+import sys
+import json
+
+# example:
+# python exploration/openaq_average_script.py data/commit/Shanghai/highcharts-series-raw.json daily
 # values can be 'hourly', 'daily', 'weekly', 'monthly', 'half_yearly', 'yearly'
 # preferrable that the df is a time series
 def openaq_averages(file_location, time):
@@ -37,3 +43,8 @@ def openaq_averages(file_location, time):
         return "Not an accepted time value. Accepted values are hourly, daily, monthly, half year, or yearly."
 
     return resample
+
+if __name__ == "__main__":
+    file = sys.argv[1]
+    time = sys.argv[2]
+    print(openaq_averages(file, time))

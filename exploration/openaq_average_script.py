@@ -42,6 +42,9 @@ def openaq_averages(file_location, time):
     else:
         return "Not an accepted time value. Accepted values are hourly, daily, monthly, half year, or yearly."
 
+    resample['epoch'] = resample['date'].astype(np.int64) // 10 ** 6
+    resample = resample[['epoch','value']].as_matrix()
+
     return resample
 
 if __name__ == "__main__":
